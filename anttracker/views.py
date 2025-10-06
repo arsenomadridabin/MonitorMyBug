@@ -164,9 +164,9 @@ class FarmerDashboardView(generics.ListAPIView):
             if end_date:
                 queryset = queryset.filter(timestamp__date__lte=end_date)
             
-            # If no date filter, get data from last 24 hours
+            # If no date filter, get data from last 24 hours by default
             if not start_date and not end_date:
-                yesterday = timezone.now() - timedelta(days=1)
+                yesterday = timezone.now() - timedelta(hours=24)
                 queryset = queryset.filter(timestamp__gte=yesterday)
             
             return queryset.order_by('-timestamp')

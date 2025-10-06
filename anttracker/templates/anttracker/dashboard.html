@@ -37,6 +37,18 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin: 20px 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .chart-wrapper {
+            min-width: 800px;
+            height: 100%;
+        }
         .success-card {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
@@ -127,7 +139,9 @@
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
-                            <canvas id="antChart"></canvas>
+                            <div class="chart-wrapper">
+                                <canvas id="antChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -139,7 +153,9 @@
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
-                            <canvas id="envChart"></canvas>
+                            <div class="chart-wrapper">
+                                <canvas id="envChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -211,7 +227,7 @@
                             <div class="col-md-6">
                                 <div class="d-flex align-items-center h-100">
                                     <span class="badge bg-info me-2" id="dateFilterStatus">
-                                        Showing: All data
+                                        Showing: Last 24 hours
                                     </span>
                                     <button class="btn btn-primary btn-sm" onclick="refreshData()">
                                         <i class="fas fa-sync-alt"></i> Refresh
@@ -262,11 +278,15 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         let authToken = localStorage.getItem('authToken');
         let farmerData = null;
         let currentDateFilter = null;
+        let antChart = null;
+        let envChart = null;
 
         // Check authentication
         if (!authToken) {
@@ -386,35 +406,145 @@
         }
 
         function updateCharts(sensorData) {
-            // Prepare data for charts
-            const labels = sensorData.slice(0, 10).map(data => 
-                new Date(data.timestamp).toLocaleTimeString()
-            ).reverse();
+            if (!sensorData || sensorData.length === 0) {
+                console.log('No sensor data available for charts');
+                // Show a message in the chart areas
+                const antCtx = document.getElementById('antChart').getContext('2d');
+                const envCtx = document.getElementById('envChart').getContext('2d');
+                antCtx.clearRect(0, 0, 800, 400);
+                envCtx.clearRect(0, 0, 800, 400);
+                
+                // Draw "No Data" message
+                antCtx.fillStyle = '#666';
+                antCtx.font = '16px Arial';
+                antCtx.textAlign = 'center';
+                antCtx.fillText('No sensor data available', 400, 200);
+                
+                envCtx.fillStyle = '#666';
+                envCtx.font = '16px Arial';
+                envCtx.textAlign = 'center';
+                envCtx.fillText('No sensor data available', 400, 200);
+                return;
+            }
+
+            // Use all available data for scrollable charts, but limit to reasonable amount for performance
+            const maxDataPoints = 200;
+            const chartData = sensorData.slice(0, maxDataPoints).reverse(); // Most recent data first
+            const labels = chartData.map(data => {
+                const date = new Date(data.timestamp);
+                // Show time only for 24-hour view, date+time for filtered view
+                if (currentDateFilter) {
+                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+            });
             
-            const antCounts = sensorData.slice(0, 10).map(data => data.ant_count).reverse();
-            const temperatures = sensorData.slice(0, 10).map(data => data.temperature).reverse();
-            const humidities = sensorData.slice(0, 10).map(data => data.humidity).reverse();
+            const antCounts = chartData.map(data => data.ant_count);
+            const temperatures = chartData.map(data => data.temperature);
+            const humidities = chartData.map(data => data.humidity);
+
+            console.log('Chart data:', {
+                dataPoints: labels.length,
+                timeRange: currentDateFilter ? 'Filtered date' : 'Last 24 hours',
+                antCounts: antCounts.slice(0, 5),
+                temperatures: temperatures.slice(0, 5),
+                humidities: humidities.slice(0, 5)
+            });
+
+            // Destroy existing charts if they exist
+            if (antChart) {
+                antChart.destroy();
+            }
+            if (envChart) {
+                envChart.destroy();
+            }
 
             // Ant Count Chart
             const antCtx = document.getElementById('antChart').getContext('2d');
-            new Chart(antCtx, {
+            antChart = new Chart(antCtx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'Ant Count',
                         data: antCounts,
-                        borderColor: '#f5576c',
-                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
-                        tension: 0.4
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: currentDateFilter ? 'Ant Activity - ' + currentDateFilter : 'Ant Activity - Last 24 Hours',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
                     scales: {
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Ant Count',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: currentDateFilter ? 'Date & Time' : 'Time (Last 24 Hours)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 2,
+                            hoverRadius: 6
+                        },
+                        line: {
+                            tension: 0.1
                         }
                     }
                 }
@@ -422,42 +552,117 @@
 
             // Environmental Chart
             const envCtx = document.getElementById('envChart').getContext('2d');
-            new Chart(envCtx, {
+            envChart = new Chart(envCtx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'Temperature (°C)',
                         data: temperatures,
-                        borderColor: '#4facfe',
-                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        borderColor: '#fd7e14',
+                        backgroundColor: 'rgba(253, 126, 20, 0.1)',
                         tension: 0.4,
+                        fill: false,
                         yAxisID: 'y'
                     }, {
                         label: 'Humidity (%)',
                         data: humidities,
-                        borderColor: '#43e97b',
-                        backgroundColor: 'rgba(67, 233, 123, 0.1)',
+                        borderColor: '#17a2b8',
+                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
                         tension: 0.4,
+                        fill: false,
                         yAxisID: 'y1'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: currentDateFilter ? 'Environmental Conditions - ' + currentDateFilter : 'Environmental Conditions - Last 24 Hours',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
                     scales: {
                         y: {
                             type: 'linear',
                             display: true,
                             position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
                         },
                         y1: {
                             type: 'linear',
                             display: true,
                             position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Humidity (%)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
                             grid: {
                                 drawOnChartArea: false,
+                                color: 'rgba(0,0,0,0.1)'
                             },
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: currentDateFilter ? 'Date & Time' : 'Time (Last 24 Hours)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 2,
+                            hoverRadius: 5
+                        },
+                        line: {
+                            tension: 0.1
                         }
                     }
                 }
@@ -507,7 +712,7 @@
         function clearDateFilter() {
             currentDateFilter = null;
             document.getElementById('dateFilter').value = '';
-            document.getElementById('dateFilterStatus').textContent = 'Showing: All data';
+            document.getElementById('dateFilterStatus').textContent = 'Showing: Last 24 hours';
             document.getElementById('dateFilterStatus').className = 'badge bg-info me-2';
             loadSensorData();
             loadDashboardData();
