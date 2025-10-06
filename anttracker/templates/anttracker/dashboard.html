@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonitorMyBug - Farmer Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1rem;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .alert-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .info-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .danger-card {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        .secondary-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        .primary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .success-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .warning-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-bug"></i> MonitorMyBug
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    Welcome, <strong id="farmer-name">Loading...</strong>
+                </span>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-microchip fa-2x mb-2"></i>
+                        <h5 class="card-title">Total Devices</h5>
+                        <h2 id="total-devices">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card success-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h5 class="card-title">Active Devices</h5>
+                        <h2 id="active-devices">0</h2>
+                        <small class="text-muted">Sent data in last 24 hours</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card warning-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-thermometer-half fa-2x mb-2"></i>
+                        <h5 class="card-title">Avg Temperature</h5>
+                        <h2 id="avg-temperature">--°C</h2>
+                        <small class="text-muted">Average for selected period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card alert-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h5 class="card-title">Recent Alerts</h5>
+                        <h2 id="recent-alerts">0</h2>
+                        <small class="text-muted">Ant count above threshold</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line"></i> Ant Count Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="antChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cloud-rain"></i> Environmental Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="envChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card info-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tint fa-2x mb-2"></i>
+                        <h5 class="card-title">Avg Humidity</h5>
+                        <h2 id="avg-humidity">--%</h2>
+                        <small class="text-muted">Average for selected period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card danger-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bug fa-2x mb-2"></i>
+                        <h5 class="card-title">Max Ant Count</h5>
+                        <h2 id="max-ant-count">--</h2>
+                        <small class="text-muted">Highest count in period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card secondary-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-database fa-2x mb-2"></i>
+                        <h5 class="card-title">Total Readings</h5>
+                        <h2 id="total-readings">--</h2>
+                        <small class="text-muted">Data points in period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card primary-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h5 class="card-title">Last Update</h5>
+                        <h2 id="last-update">--</h2>
+                        <small class="text-muted">Most recent reading</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-calendar-alt"></i> Filter by Date</h6>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                    <input type="date" class="form-control" id="dateFilter" onchange="filterByDate()">
+                                    <button class="btn btn-outline-secondary" onclick="clearDateFilter()">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center h-100">
+                                    <span class="badge bg-info me-2" id="dateFilterStatus">
+                                        Showing: All data
+                                    </span>
+                                    <button class="btn btn-primary btn-sm" onclick="refreshData()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Data Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-table"></i> Sensor Data</h5>
+                        <span class="badge bg-secondary" id="dataCount">Loading...</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Device</th>
+                                        <th>Timestamp</th>
+                                        <th>Temperature</th>
+                                        <th>Humidity</th>
+                                        <th>Ant Count</th>
+                                        <th>Mealy Bugs</th>
+                                        <th>Rainfall</th>
+                                        <th>Irrigation</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sensor-data-table">
+                                    <tr>
+                                        <td colspan="8" class="text-center">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let farmerData = null;
+        let currentDateFilter = null;
+
+        // Check authentication
+        if (!authToken) {
+            window.location.href = '/login.html';
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFarmerProfile();
+            loadDashboardData();
+            loadSensorData();
+            setDefaultDate();
+        });
+
+        function setDefaultDate() {
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+        }
+
+        async function loadFarmerProfile() {
+            try {
+                const response = await fetch('/api/profile/', {
+                    headers: {
+                        'Authorization': `Token ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    farmerData = await response.json();
+                    document.getElementById('farmer-name').textContent = farmerData.user.first_name || farmerData.user.username;
+                } else {
+                    console.error('Failed to load farmer profile');
+                }
+            } catch (error) {
+                console.error('Error loading farmer profile:', error);
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                let url = '/api/dashboard/';
+                
+                // Add date filter if selected
+                if (currentDateFilter) {
+                    url += `?start_date=${currentDateFilter}&end_date=${currentDateFilter}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Token ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateSummaryCards(data.summary);
+                    updateCharts(data.sensor_data);
+                } else {
+                    console.error('Failed to load dashboard data');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateSummaryCards(summary) {
+            document.getElementById('total-devices').textContent = summary.total_devices;
+            document.getElementById('active-devices').textContent = summary.active_devices;
+            document.getElementById('recent-alerts').textContent = summary.recent_alerts;
+            
+            // Use server-calculated average temperature
+            document.getElementById('avg-temperature').textContent = summary.avg_temperature + '°C';
+            
+            // Add additional metrics if available
+            if (summary.avg_humidity !== undefined) {
+                document.getElementById('avg-humidity').textContent = summary.avg_humidity + '%';
+            }
+            
+            if (summary.max_ant_count !== undefined) {
+                document.getElementById('max-ant-count').textContent = summary.max_ant_count;
+            }
+            
+            // Calculate total readings and last update
+            const totalReadings = summary.sensor_data ? summary.sensor_data.length : 0;
+            document.getElementById('total-readings').textContent = totalReadings;
+            
+            // Get last update time
+            if (summary.latest_data && Object.keys(summary.latest_data).length > 0) {
+                const latestDevice = Object.values(summary.latest_data)[0];
+                const lastUpdate = new Date(latestDevice.timestamp);
+                const timeAgo = getTimeAgo(lastUpdate);
+                document.getElementById('last-update').textContent = timeAgo;
+            } else {
+                document.getElementById('last-update').textContent = 'No data';
+            }
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) {
+                return diffInSeconds + 's ago';
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return minutes + 'm ago';
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return hours + 'h ago';
+            } else {
+                const days = Math.floor(diffInSeconds / 86400);
+                return days + 'd ago';
+            }
+        }
+
+        function updateCharts(sensorData) {
+            // Prepare data for charts
+            const labels = sensorData.slice(0, 10).map(data => 
+                new Date(data.timestamp).toLocaleTimeString()
+            ).reverse();
+            
+            const antCounts = sensorData.slice(0, 10).map(data => data.ant_count).reverse();
+            const temperatures = sensorData.slice(0, 10).map(data => data.temperature).reverse();
+            const humidities = sensorData.slice(0, 10).map(data => data.humidity).reverse();
+
+            // Ant Count Chart
+            const antCtx = document.getElementById('antChart').getContext('2d');
+            new Chart(antCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ant Count',
+                        data: antCounts,
+                        borderColor: '#f5576c',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Environmental Chart
+            const envCtx = document.getElementById('envChart').getContext('2d');
+            new Chart(envCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: temperatures,
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Humidity (%)',
+                        data: humidities,
+                        borderColor: '#43e97b',
+                        backgroundColor: 'rgba(67, 233, 123, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadSensorData() {
+            try {
+                let url = '/api/sensor-data/?limit=50';
+                
+                // Add date filter if selected
+                if (currentDateFilter) {
+                    url += `&start_date=${currentDateFilter}&end_date=${currentDateFilter}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Token ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateSensorDataTable(data.results || data);
+                } else {
+                    console.error('Failed to load sensor data');
+                }
+            } catch (error) {
+                console.error('Error loading sensor data:', error);
+            }
+        }
+
+        function filterByDate() {
+            const selectedDate = document.getElementById('dateFilter').value;
+            if (selectedDate) {
+                currentDateFilter = selectedDate;
+                document.getElementById('dateFilterStatus').textContent = `Showing: ${selectedDate}`;
+                document.getElementById('dateFilterStatus').className = 'badge bg-success me-2';
+            } else {
+                clearDateFilter();
+            }
+            loadSensorData();
+            loadDashboardData();
+        }
+
+        function clearDateFilter() {
+            currentDateFilter = null;
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('dateFilterStatus').textContent = 'Showing: All data';
+            document.getElementById('dateFilterStatus').className = 'badge bg-info me-2';
+            loadSensorData();
+            loadDashboardData();
+        }
+
+        function updateSensorDataTable(data) {
+            const tbody = document.getElementById('sensor-data-table');
+            const dataCount = document.getElementById('dataCount');
+            
+            // Update data count
+            dataCount.textContent = `${data.length} records`;
+            
+            if (data.length === 0) {
+                const message = currentDateFilter 
+                    ? `No sensor data available for ${currentDateFilter}`
+                    : 'No sensor data available';
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center">${message}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.device_name}</td>
+                    <td>${new Date(item.timestamp).toLocaleString()}</td>
+                    <td>${item.temperature}°C</td>
+                    <td>${item.humidity}%</td>
+                    <td>
+                        <span class="badge ${item.ant_count > 50 ? 'bg-danger' : 'bg-success'}">
+                            ${item.ant_count}
+                        </span>
+                    </td>
+                    <td>${item.mealy_bugs_count}</td>
+                    <td>
+                        <span class="badge ${item.is_rainfall ? 'bg-info' : 'bg-secondary'}">
+                            ${item.is_rainfall ? 'Yes' : 'No'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${item.is_irrigation ? 'bg-primary' : 'bg-secondary'}">
+                            ${item.is_irrigation ? 'Yes' : 'No'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function refreshData() {
+            loadDashboardData();
+            loadSensorData();
+        }
+
+        function logout() {
+            // Clear client-side token first
+            localStorage.removeItem('authToken');
+            
+            // Use GET request to logout endpoint to properly clear server session
+            // This will work with the existing session cookie
+            window.location.href = '/logout/';
+        }
+
+        // Auto-refresh every 5 minutes
+        setInterval(refreshData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
