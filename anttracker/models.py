@@ -48,10 +48,12 @@ class SensorData(models.Model):
     timestamp = models.DateTimeField(default=timezone.now, help_text="When the data was recorded")
     temperature = models.FloatField(help_text="Temperature in Celsius")
     humidity = models.FloatField(help_text="Humidity percentage")
-    ant_count = models.IntegerField(help_text="Number of ants detected")
-    mealy_bugs_count = models.IntegerField(help_text="Number of mealy bugs detected")
+    moisture = models.FloatField(null=True, blank=True, help_text="Soil moisture percentage")
+    ant_count = models.IntegerField(default=0, help_text="Number of ants detected by device-side ML")
+    mealy_bugs_count = models.IntegerField(default=0, help_text="Number of mealy bugs detected by device-side ML")
     is_rainfall = models.BooleanField(default=False, help_text="Whether rainfall was detected")
     is_irrigation = models.BooleanField(default=False, help_text="Whether irrigation was active")
+    ml_confidence = models.FloatField(null=True, blank=True, help_text="ML model confidence score from device")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

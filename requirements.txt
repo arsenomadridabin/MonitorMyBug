@@ -2,3 +2,7 @@ Django==4.2.24
 djangorestframework==3.16.1
 django-cors-headers==4.9.0
 Pillow==11.3.0
+ultralytics>=8.0.120
+opencv-python>=4.7.0
+numpy>=1.23.0
+

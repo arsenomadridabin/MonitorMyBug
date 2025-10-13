@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import template_views
+from . import ml_api
 
 urlpatterns = [
     # Web pages
@@ -23,6 +24,10 @@ urlpatterns = [
     
     # Device data submission endpoint (for Raspberry Pi)
     path('device-data/<str:device_id>/', views.device_data_submission, name='device-data-submission'),
+    
+    # Device sensor data API (for Raspberry Pi with pre-computed ML counts)
+    path('device-sensor-data/', ml_api.device_sensor_data_api, name='device-sensor-data-api'),
+    path('api-status/', ml_api.api_status_api, name='api-status-api'),
     
     # Dashboard and data endpoints
     path('dashboard/', views.FarmerDashboardView.as_view(), name='farmer-dashboard'),
