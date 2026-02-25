@@ -40,27 +40,26 @@ def send_sensor_data(sensor_data):
         
         if response.status_code == 201:
             data = response.json()
-            print(f"✅ Data sent successfully - ID: {data['data_id']}")
+            print(f"Data sent successfully - ID: {data['data_id']}")
             return True
         else:
-            print(f"❌ Failed to send data: {response.status_code} - {response.text}")
+            print(f"Failed to send data: {response.status_code} - {response.text}")
             return False
             
     except requests.exceptions.RequestException as e:
-        print(f"❌ Network error: {e}")
+        print(f"Network error: {e}")
         return False
 
 def main():
     """Main loop - send data every minute"""
-    print("🚀 MonitorMyBug Raspberry Pi Client")
-    print(f"📡 Device ID: {DEVICE_ID}")
-    print(f"🌐 Server: {SERVER_URL}")
-    print("⏰ Sending data every 60 seconds...")
-    print("=" * 50)
+    print("MonitorMyBug Raspberry Pi Client")
+    print(f"Device ID: {DEVICE_ID}")
+    print(f"Server: {SERVER_URL}")
+    print("Sending data every 60 seconds...")
     
     # Validate configuration
     if API_KEY == "your-api-key-here":
-        print("❌ Please update the API_KEY in the script!")
+        print(" Please update the API_KEY in the script!")
         print("   Get your API key from the device details in the web interface.")
         return
     
@@ -92,8 +91,8 @@ def main():
             time.sleep(60)
             
     except KeyboardInterrupt:
-        print(f"\n\n🛑 Stopping client...")
-        print(f"📊 Final stats: {success_count} successful, {error_count} errors")
+        print(f"\n\n Stopping client...")
+        print(f"Final stats: {success_count} successful, {error_count} errors")
 
 if __name__ == "__main__":
     main()
