@@ -75,7 +75,7 @@ class SensorData(models.Model):
     def send_ant_alert(self):
         """Send email alert when ant count exceeds threshold"""
         try:
-            subject = f"🚨 Ant Alert: High Ant Count Detected - {self.device.device_name}"
+            subject = f"Ant Alert: High Ant Count Detected - {self.device.device_name}"
             message = f"""
 Dear {self.device.farmer.user.first_name or self.device.farmer.user.username},
 
