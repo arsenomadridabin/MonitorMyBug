@@ -34,10 +34,10 @@ def test_farmer_registration():
     
     if response.status_code == 201:
         data = response.json()
-        print(f"✅ Registration successful! Token: {data['token'][:20]}...")
+        print(f"Registration successful! Token: {data['token'][:20]}...")
         return data['token']
     else:
-        print(f"❌ Registration failed: {response.text}")
+        print(f"Registration failed: {response.text}")
         return None
 
 def test_farmer_login():
@@ -53,10 +53,10 @@ def test_farmer_login():
     
     if response.status_code == 200:
         data = response.json()
-        print(f"✅ Login successful! Token: {data['token'][:20]}...")
+        print(f"Login successful! Token: {data['token'][:20]}...")
         return data['token']
     else:
-        print(f"❌ Login failed: {response.text}")
+        print(f"Login failed: {response.text}")
         return None
 
 def test_device_creation(token):
@@ -74,12 +74,12 @@ def test_device_creation(token):
     
     if response.status_code == 201:
         data = response.json()
-        print(f"✅ Device created successfully!")
+        print(f"Device created successfully!")
         print(f"   Device ID: {data['device_id']}")
         print(f"   API Key: {data['api_key'][:20]}...")
         return data
     else:
-        print(f"❌ Device creation failed: {response.text}")
+        print(f"Device creation failed: {response.text}")
         return None
 
 def test_device_data_submission(device_id, api_key):
@@ -101,12 +101,12 @@ def test_device_data_submission(device_id, api_key):
     
     if response.status_code == 201:
         data = response.json()
-        print(f"✅ Data submitted successfully!")
+        print(f"Data submitted successfully!")
         print(f"   Data ID: {data['data_id']}")
         print(f"   Timestamp: {data['timestamp']}")
         return True
     else:
-        print(f"❌ Data submission failed: {response.text}")
+        print(f"Data submission failed: {response.text}")
         return False
 
 def test_dashboard(token):
@@ -118,54 +118,54 @@ def test_dashboard(token):
     
     if response.status_code == 200:
         data = response.json()
-        print(f"✅ Dashboard data retrieved successfully!")
-        print(f"   Total devices: {data['summary']['total_devices']}")
-        print(f"   Active devices: {data['summary']['active_devices']}")
-        print(f"   Recent alerts: {data['summary']['recent_alerts']}")
+        print(f"Dashboard data retrieved successfully!")
+        print(f"Total devices: {data['summary']['total_devices']}")
+        print(f"Active devices: {data['summary']['active_devices']}")
+        print(f"Recent alerts: {data['summary']['recent_alerts']}")
         return True
     else:
-        print(f"❌ Dashboard data retrieval failed: {response.text}")
+        print(f"Dashboard data retrieval failed: {response.text}")
         return False
 
 def main():
     """Run all tests"""
-    print("🚀 MonitorMyBug API Test Suite")
+    print("MonitorMyBug API Test Suite")
     print("=" * 50)
     
     # Test farmer registration
     token = test_farmer_registration()
     if not token:
-        print("\n❌ Cannot proceed without valid token")
+        print("\nCannot proceed without valid token")
         return
     
     # Test farmer login
     login_token = test_farmer_login()
     if not login_token:
-        print("\n❌ Login test failed")
+        print("\nLogin test failed")
         return
     
     # Test device creation
     device = test_device_creation(token)
     if not device:
-        print("\n❌ Cannot proceed without device")
+        print("\nCannot proceed without device")
         return
     
     # Test data submission
     success = test_device_data_submission(device['device_id'], device['api_key'])
     if not success:
-        print("\n❌ Data submission test failed")
+        print("\nData submission test failed")
         return
     
     # Test dashboard
     test_dashboard(token)
     
     print("\n" + "=" * 50)
-    print("🎉 All tests completed!")
+    print("All tests completed!")
     print("\n📱 Web Interface:")
     print("   Login: http://localhost:8000/login.html")
     print("   Register: http://localhost:8000/register.html")
     print("   Dashboard: http://localhost:8000/dashboard.html")
-    print("\n🔧 Admin Interface:")
+    print("\nAdmin Interface:")
     print("   Admin: http://localhost:8000/admin/")
     print("   Username: admin")
     print("   Password: admin123")
