@@ -22,8 +22,8 @@ def test_farmer_registration():
     registration_data = {
         "username": "test_farmer",
         "email": "farmer@example.com",
-        "password": "testpassword123",
-        "password_confirm": "testpassword123",
+        "password": "*****",
+        "password_confirm": "*****",
         "farm_name": "Test Farm",
         "farm_location": "Test Location",
         "phone_number": "+1234567890",
